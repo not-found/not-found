@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Animated Disc</title>
+    <script src="spriterotator.js"></script>
+    <script>
+        function init() {
+            rotator = new SpriteRotator("canvas", "images/pinguin.png", 168, 299, 6, 4);
+        }
+
+        function handleKeyPress(event) {
+            //Check for keyCode. 82 == 'r', 76 == 'l'
+            if (event.keyCode == 82) {
+                rotator.nextImage();
+            } else if (event.keyCode == 76) {
+                rotator.prevImage();
+            }
+        }
+    </script>
+</head>
+<body onload="init()" onkeydown="handleKeyPress(event)">
+<canvas id="canvas" width="168" height="299"/>
+</body>
+</html>
