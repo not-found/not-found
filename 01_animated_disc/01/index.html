@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Animated Disc</title>
+    <script src="../rotator.js"></script>
+    <script>
+        function init() {
+            images = ["images/0.png",
+                "images/15.png",
+                "images/30.png",
+                "images/45.png",
+                "images/60.png",
+                "images/75.png",
+                "images/90.png",
+                "images/105.png",
+                "images/120.png",
+                "images/135.png",
+                "images/150.png",
+                "images/165.png",
+                "images/180.png",
+                "images/195.png",
+                "images/210.png",
+                "images/225.png",
+                "images/240.png",
+                "images/255.png",
+                "images/270.png",
+                "images/285.png",
+                "images/300.png",
+                "images/315.png",
+                "images/330.png",
+                "images/345.png"];
+            rotator = new ImageRotator("pic", images);
+        }
+
+        function handleKeyPress(event) {
+            //Check for keyCode. 82 == 'r', 76 == 'l'
+            if (event.keyCode == 82) {
+                rotator.nextImage();
+            } else if (event.keyCode == 76) {
+                rotator.prevImage();
+            }
+        }
+    </script>
+</head>
+<body onload="init()" onkeydown="handleKeyPress(event)">
+<img id="pic"/>
+</body>
+</html>
