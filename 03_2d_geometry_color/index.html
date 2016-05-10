@@ -1,0 +1,108 @@
+<!DOCTYPE html5>
+<html>
+<body>
+<canvas id="canvas" width="200" height="200"></canvas>
+<script>
+    var canvas = document.getElementById('canvas');
+    var context = canvas.getContext('experimental-webgl');
+
+    context.clearColor(0, 0, 0, 1);
+
+    var vertexShaderSource = 'attribute vec2 pos;'
+            + 'attribute vec4 col;'
+            + 'varying vec4 color;'
+            + 'void main(){'
+            + 'color = col; '
+            + 'gl_Position = vec4(pos * 0.5, 0, 1); '
+            + '}';
+    var vertexShader = context.createShader(context.VERTEX_SHADER);
+    context.shaderSource(vertexShader, vertexShaderSource);
+    context.compileShader(vertexShader);
+
+    fragmentShaderSource = 'precision mediump float;'
+            + 'varying vec4 color; '
+            + 'void main() { '
+            + 'gl_FragColor = color; '
+            + '}';
+    var fragmentShader = context.createShader(context.FRAGMENT_SHADER);
+    context.shaderSource(fragmentShader, fragmentShaderSource);
+    context.compileShader(fragmentShader);
+
+    var prog = context.createProgram();
+    context.attachShader(prog, vertexShader);
+    context.attachShader(prog, fragmentShader);
+    context.linkProgram(prog);
+    context.useProgram(prog);
+
+    var pacManVertices = new Float32Array([0,-0.05,
+        0,0.07,
+        -0.33,0.07,
+        -0.33,0.17,
+        -0.68,0.17,
+        -0.68,0.3,
+        -0.9,0.3,
+        -0.9,0.5,
+        -0.8,0.5,
+        -0.8,0.62,
+        -0.56,0.62,
+        -0.56,0.73,
+        0,0.73,
+        0,0.62,
+        0.21,0.62,
+        0.21,0.5,
+        0.33,0.5,
+        0.33,0.3,
+        0.46,0.3,
+        0.46,-0.26,
+        0.33,-0.26,
+        0.33,-0.48,
+        0.21,-0.48,
+        0.21,-0.59,
+        0,-0.59,
+        0,-0.7,
+        -0.56,-0.7,
+        -0.56,-0.6,
+        -0.8,-0.6,
+        -0.8,-0.49,
+        -0.9,-0.49,
+        -0.9,-0.27,
+        -0.68,-0.27,
+        -0.68,-0.15,
+        -0.33,-0.15,
+        -0.33,-0.05,
+        0,-0.05]);
+
+    var numVertices = (pacManVertices.length / 2);
+    var pacManCols = new Float32Array(numVertices * 4);
+    for(var i = 0; i < numVertices; i++)
+    {
+        var r = Math.floor(Math.random() * 2);
+        var g = Math.floor(Math.random() * 2);
+        var b = Math.floor(Math.random() * 2);
+        pacManCols[i*4] = r;
+        pacManCols[i*4+1] = g;
+        pacManCols[i*4+2] = b;
+        pacManCols[i*4+3] = 1.0;
+    }
+
+    var vbo = context.createBuffer();
+    context.bindBuffer(context.ARRAY_BUFFER, vbo);
+    context.bufferData(context.ARRAY_BUFFER, pacManVertices, context.STATIC_DRAW);
+
+    var posAttrib = context.getAttribLocation(prog, 'pos');
+    context.vertexAttribPointer(posAttrib, 2, context.FLOAT, false, 0, 0);
+    context.enableVertexAttribArray(posAttrib);
+
+    var vboColor = context.createBuffer();
+    context.bindBuffer(context.ARRAY_BUFFER, vboColor);
+    context.bufferData(context.ARRAY_BUFFER, pacManCols, context.STATIC_DRAW);
+
+    var colAttrib = context.getAttribLocation(prog, 'col');
+    context.vertexAttribPointer(colAttrib, 4, context.FLOAT, false, 0, 0);
+    context.enableVertexAttribArray(colAttrib);
+
+    context.clear(context.COLOR_BUFFER_BIT);
+    context.drawArrays(context.LINE_LOOP, 0, 36);
+</script>
+</body>
+</html>
