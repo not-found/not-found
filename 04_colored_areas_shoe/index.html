@@ -1,139 +1,136 @@
 <!DOCTYPE html5>
 <html>
-    <body>
-        <canvas id="canvas" width="1000" height="1000"></canvas>
-        <script>
-            var canvas = document.getElementById('canvas');
-            var context = canvas.getContext('experimental-webgl');
+<body>
+<canvas id="canvas" width="1000" height="1000"></canvas>
+<script>
+    var canvas = document.getElementById('canvas');
+    var context = canvas.getContext('experimental-webgl');
 
-            context.clearColor(.95, .95, .95, 1);
-            context.frontFace(context.CCW);
-            context.enable(context.CULL_FACE);
-            context.cullFace(context.BACK);
+    var vertextShaderSource = '' +
+            'attribute vec3 pos;' +
+            'float radiansDegree = 2.8;' +
+            'mat3 m3x3 = mat3(1, 0, 0, 0, cos(radiansDegree), sin(radiansDegree), 0, sin(radiansDegree), cos(radiansDegree));' +
+            'attribute vec4 col;' +
+            'varying vec4 color;' +
+            'void main(){' + 'color = col;' +
+            'gl_Position = vec4(m3x3 * pos * 0.2, 1);' +
+            '}';
+    var vertexShader = context.createShader(context.VERTEX_SHADER);
+    context.shaderSource(vertexShader, vertextShaderSource);
+    context.compileShader(vertexShader);
 
-            var vertextShaderSource = '' +
-                'attribute vec3 pos;' +
-                'float radiansDegree = 2.7;' +
-                'mat3 m3x3 = mat3(1, 0, 0, 0, cos(radiansDegree), sin(radiansDegree), 0, sin(radiansDegree), cos(radiansDegree));' +
-                'attribute vec4 col;' +
-                'varying vec4 color;' +
-                'void main(){' + 'color = col;' +
-                'gl_Position = vec4(m3x3 * pos * 0.2, 1);' +
-                '}';
-            var vertexShader = context.createShader(context.VERTEX_SHADER);
-            context.shaderSource(vertexShader, vertextShaderSource);
-            context.compileShader(vertexShader);
+    fragmentShaderSouce = 'precision mediump float;' +
+            'varying vec4 color;' +
+            'void main() {' +
+            'gl_FragColor = color;' +
+            '}';
+    var fragmentShader = context.createShader(context.FRAGMENT_SHADER);
+    context.shaderSource(fragmentShader, fragmentShaderSouce);
+    context.compileShader(fragmentShader);
 
-            fragmentShaderSouce = 'precision mediump float;' +
-                'varying vec4 color;' + 
-                'void main() {' + 
-                'gl_FragColor = color;' + 
-                '}';
-            var fragmentShader = context.createShader(context.FRAGMENT_SHADER);
-            context.shaderSource(fragmentShader, fragmentShaderSouce);
-            context.compileShader(fragmentShader);
+    var prog = context.createProgram();
+    context.attachShader(prog, vertexShader);
+    context.attachShader(prog, fragmentShader);
+    context.bindAttribLocation(prog, 0, "pos");
+    context.linkProgram(prog);
+    context.useProgram(prog);
 
-            var prog = context.createProgram();
-            context.attachShader(prog, vertexShader);
-            context.attachShader(prog, fragmentShader);
-            context.bindAttribLocation(prog, 0, "pos");
-            context.linkProgram(prog);
-            context.useProgram(prog);
+    var vertices, indicesLines, indicesTris;
+    createVertexData();
 
-            var vertices, indicesLines, indicesTris;
-            createVertexData();
+    var vboPos = context.createBuffer();
+    context.bindBuffer(context.ARRAY_BUFFER, vboPos);
+    context.bufferData(context.ARRAY_BUFFER,
+            vertices, context.STATIC_DRAW);
 
-            var vboPos = context.createBuffer();
-            context.bindBuffer(context.ARRAY_BUFFER, vboPos);
-            context.bufferData(context.ARRAY_BUFFER,
-                vertices, context.STATIC_DRAW);
+    var posAttrib = context.getAttribLocation(prog, 'pos');
+    context.vertexAttribPointer(posAttrib, 3, context.FLOAT,
+            false, 0, 0);
+    context.enableVertexAttribArray(posAttrib);
 
-            var posAttrib = context.getAttribLocation(prog, 'pos');
-            context.vertexAttribPointer(posAttrib, 3, context.FLOAT,
-                false, 0, 0);
-            context.enableVertexAttribArray(posAttrib);
+    var colAttrib = context.getAttribLocation(prog, 'col');
 
-            var colAttrib = context.getAttribLocation(prog, 'col');
+    var iboLines = context.createBuffer();
+    context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboLines);
+    context.bufferData(context.ELEMENT_ARRAY_BUFFER,
+            indicesLines, context.STATIC_DRAW);
+    iboLines.numberOfElements = indicesLines.length;
+    context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, null);
 
-            var iboLines = context.createBuffer();
-            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboLines);
-            context.bufferData(context.ELEMENT_ARRAY_BUFFER,
-                indicesLines, context.STATIC_DRAW);
-            iboLines.numberOfElements = indicesLines.length;
-            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, null);
+    var iboTris = context.createBuffer();
+    context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboTris);
+    context.bufferData(context.ELEMENT_ARRAY_BUFFER,
+            indicesTris, context.STATIC_DRAW);
+    iboTris.numberOfElements = indicesTris.length;
+    context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, null);
 
-            var iboTris = context.createBuffer();
-            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboTris);
-            context.bufferData(context.ELEMENT_ARRAY_BUFFER,
-                indicesTris, context.STATIC_DRAW);
-            iboTris.numberOfElements = indicesTris.length;
-            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, null);
+    context.clear(context.COLOR_BUFFER_BIT);
 
-            context.clear(context.COLOR_BUFFER_BIT);
+    context.vertexAttrib4f(colAttrib, 0.18, 0.41, 0, 1);
+    context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboTris);
+    context.drawElements(context.TRIANGLES,
+            iboTris.numberOfElements, context.UNSIGNED_SHORT, 0);
 
-            context.vertexAttrib4f(colAttrib, 0.18, 0.41, 0, 1);
-            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboTris);
-            context.drawElements(context.TRIANGLES,
-                iboTris.numberOfElements, context.UNSIGNED_SHORT, 0);
+    context.vertexAttrib4f(colAttrib, 0.4, 0.89, 0, 1);
+    context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboLines);
+    context.drawElements(context.LINES,
+            iboLines.numberOfElements, context.UNSIGNED_SHORT, 0);
 
-            context.vertexAttrib4f(colAttrib, 0.4, 0.89, 0, 1);
-            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboLines);
-            context.drawElements(context.LINES,
-                iboLines.numberOfElements, context.UNSIGNED_SHORT, 0);
+    function createVertexData() {
+        var n = 32;
+        var m = 7;
+        vertices = new Float32Array(3 * (n + 1) * (m + 1));
+        indicesLines = new Uint16Array(2 * 2 * (n + 1) * (m + 1));
+        indicesTris = new Uint16Array(3 * 2 * n * m);
 
-            function createVertexData(){
-                var n = 32;
-                var m = 7;
-                vertices = new Float32Array(3 * (n+1) * (m+1));
-                indicesLines = new Uint16Array(2 * 2 * n * m);
-                indicesTris  = new Uint16Array(3 * 2 * n * m);
+        var uMax = 2;
+        var uMin = -2;
+        var vMax = 2;
+        var vMin = -2;
 
-                var uMax = 2;
-                var uMin = -2;
-                var vMax = 2;
-                var vMin = -2;
+        var du = (uMax - uMin) / n;
+        var dv = (vMax - vMin) / m;
+        var iLines = 0;
+        var iTris = 0;
 
-                var du = (uMax - uMin)/n;
-                var dv = (vMax - vMin)/m;
-                var iLines = 0;
-                var iTris = 0;
+        var u = uMin;
+        var v = vMin;
+        for (var i = 0; i <= n; i++) {
+            v = vMin;
+            for (var j = 0; j <= m; j++) {
 
-                var u = uMin;
-                var v = vMin;
-                for(var i=0; i <= n; i++) {
-                    v = vMin;
-                    for(var j=0; j <= m; j++){
+                var iVertex = i * (m + 1) + j;
 
-                        var iVertex = i*(m+1) + j;
+                var x = u;
+                var y = v;
+                var z = (Math.pow(u, 3) / 3) - (Math.pow(v, 2) / 2);
 
-                        var x = u;
-                        var y = v;
-                        var z = (Math.pow(u,3)/3) - (Math.pow(v, 2) / 2);
+                vertices[iVertex * 3] = x;
+                vertices[iVertex * 3 + 1] = y;
+                vertices[iVertex * 3 + 2] = z;
 
-                        vertices[iVertex * 3] = x;
-                        vertices[iVertex * 3 + 1] = y;
-                        vertices[iVertex * 3 + 2] = z;
-						
-                        if(j>0 && i>0) {
-                            indicesLines[iLines++] = iVertex - 1;
-                            indicesLines[iLines++] = iVertex;
-                            indicesLines[iLines++] = iVertex - (m + 1);
-                            indicesLines[iLines++] = iVertex;
-                        }
-
-                        if(j>0 && i>0){
-                            indicesTris[iTris++] = iVertex;
-                            indicesTris[iTris++] = iVertex - 1;
-                            indicesTris[iTris++] = iVertex - (m+1);
-                            indicesTris[iTris++] = iVertex - 1;
-                            indicesTris[iTris++] = iVertex - (m+1) - 1;
-                            indicesTris[iTris++] = iVertex - (m+1);
-                        }
-                        v += dv;
-                    }
-                    u += du;
+                if (i > 0 && i <= n) {
+                    indicesLines[iLines++] = iVertex - (m + 1);
+                    indicesLines[iLines++] = iVertex;
                 }
-            }    
-        </script>
-    </body>
+                if (j > 0 && j <= m) {
+                    indicesLines[iLines++] = iVertex - 1;
+                    indicesLines[iLines++] = iVertex;
+                }
+
+                if (j > 0 && i > 0) {
+                    indicesTris[iTris++] = iVertex;
+                    indicesTris[iTris++] = iVertex - 1;
+                    indicesTris[iTris++] = iVertex - (m + 1);
+                    indicesTris[iTris++] = iVertex - 1;
+                    indicesTris[iTris++] = iVertex - (m + 1) - 1;
+                    indicesTris[iTris++] = iVertex - (m + 1);
+                }
+                v += dv;
+            }
+            u += du;
+        }
+    }
+</script>
+</body>
 </html>

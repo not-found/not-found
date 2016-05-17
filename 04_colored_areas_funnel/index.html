@@ -6,14 +6,9 @@
     var canvas = document.getElementById('canvas');
     var context = canvas.getContext('experimental-webgl');
 
-    context.clearColor(.95, .95, .95, 1);
-    context.frontFace(context.CCW);
-    context.enable(context.CULL_FACE);
-    context.cullFace(context.BACK);
-
     var vertextShaderSource = '' +
             'attribute vec3 pos;' +
-            'float radiansDegree = 1.0;' +
+            'float radiansDegree = 2.4;' +
             'mat3 m3x3 = mat3(1, 0, 0, 0, cos(radiansDegree), sin(radiansDegree), 0, sin(radiansDegree), cos(radiansDegree));' +
             'attribute vec4 col;' +
             'varying vec4 color;' +
@@ -85,7 +80,7 @@
         var n = 32;
         var m = 7;
         vertices = new Float32Array(3 * (n + 1) * (m + 1));
-        indicesLines = new Uint16Array(2 * 2 * n * m);
+        indicesLines = new Uint16Array(2 * 2 * (n + 1) * (m + 1));
         indicesTris = new Uint16Array(3 * 2 * n * m);
 
         var uMax = 2;
@@ -114,9 +109,12 @@
                 vertices[iVertex * 3 + 1] = y;
                 vertices[iVertex * 3 + 2] = z;
 
-                if (j > 0 && i > 0) {
+                if (j > 0 && j <= m){
                     indicesLines[iLines++] = iVertex - 1;
                     indicesLines[iLines++] = iVertex;
+                }
+                if(i > 0 && i <= n)
+                {
                     indicesLines[iLines++] = iVertex - (m + 1);
                     indicesLines[iLines++] = iVertex;
                 }
