@@ -1,0 +1,194 @@
+<!DOCTYPE html5>
+<html>
+    <body>
+        <canvas id="canvas" width="1000" height="1000"></canvas>
+        <script>
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('experimental-webgl');
+
+            context.clearColor(.95, .95, .95, 1);
+
+            var vertextShaderSource = '' +
+                    'attribute vec3 pos;' +
+                    'float radiansDegree = 0.3;' +
+                    'mat3 m3x3 = mat3(1, 0, 0, 0, cos(radiansDegree), sin(radiansDegree), 0, sin(radiansDegree), cos(radiansDegree));' +
+                    'attribute vec4 col;' +
+                    'varying vec4 color;' +
+                    'void main(){' + 'color = col;' +
+                    'gl_Position = vec4(m3x3 * pos * 0.2, 1);' +
+                    '}';
+            var vertexShader = context.createShader(context.VERTEX_SHADER);
+            context.shaderSource(vertexShader, vertextShaderSource);
+            context.compileShader(vertexShader);
+
+            fragmentShaderSouce = 'precision mediump float;' +
+                'varying vec4 color;' + 
+                'void main() {' + 
+                'gl_FragColor = color;' + 
+                '}';
+            var fragmentShader = context.createShader(context.FRAGMENT_SHADER);
+            context.shaderSource(fragmentShader, fragmentShaderSouce);
+            context.compileShader(fragmentShader);
+
+            var prog = context.createProgram();
+            context.attachShader(prog, vertexShader);
+            context.attachShader(prog, fragmentShader);
+            context.bindAttribLocation(prog, 0, "pos");
+            context.linkProgram(prog);
+            context.useProgram(prog);
+
+            //Seed
+            var vertices = new Float32Array([
+                1.0, 0.0, 0.0,
+                -1.0, 0.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, -1.0, 0.0,
+                0.0, 0.0, 1.0,
+                0.0, 0.0, -1.0
+            ]);
+            var indices = new Uint16Array([
+                0, 4, 2,
+                2, 4, 1,
+                1, 4, 3,
+                3, 4, 0,
+                0, 2, 5,
+                2, 1, 5,
+                1, 3, 5,
+                3, 0, 5
+            ]);
+            createSphere(1);
+
+            var vboPos = context.createBuffer();
+            context.bindBuffer(context.ARRAY_BUFFER, vboPos);
+            context.bufferData(context.ARRAY_BUFFER, vertices, context.STATIC_DRAW);
+
+            var posAttrib = context.getAttribLocation(prog, 'pos');
+            context.vertexAttribPointer(posAttrib, 3, context.FLOAT, false, 0, 0);
+            context.enableVertexAttribArray(posAttrib);
+
+            var colAttrib = context.getAttribLocation(prog, 'col');
+
+            var iboTris = context.createBuffer();
+            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboTris);
+            context.bufferData(context.ELEMENT_ARRAY_BUFFER, indices, context.STATIC_DRAW);
+            iboTris.numberOfElements = indices.length;
+            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, null);
+
+            context.clear(context.COLOR_BUFFER_BIT);
+
+            context.vertexAttrib4f(colAttrib, 0.18, 0.41, 0, 1);
+            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboTris);
+            context.drawElements(context.TRIANGLES, iboTris.numberOfElements, context.UNSIGNED_SHORT, 0);
+
+            context.vertexAttrib4f(colAttrib, 0.18, 0, 0, 1);
+            context.bindBuffer(context.ELEMENT_ARRAY_BUFFER, iboTris);
+            context.drawElements(context.LINE_STRIP, iboTris.numberOfElements, context.UNSIGNED_SHORT, 0);
+
+            function Vec3(x, y, z)
+            {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+
+                this.add = function(vec3){
+                    this.x += vec3.x;
+                    this.y += vec3.y;
+                    this.z += vec3.z;
+                }
+
+                this.multiply = function(number){
+                    this.x *= number;
+                    this.y *= number;
+                    this.z *= number;
+                }
+
+                this.normalize = function () {
+                    var length = Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2) + Math.pow(this.z, 2));
+                    this.x /= length;
+                    this.y /= length;
+                    this.z /= length;
+                }
+
+                Vec3.add = function(vec1, vec2)
+                {
+                    var vec = new Vec3(0, 0, 0);
+                    vec.add(vec1);
+                    vec.add(vec2);
+                    return vec;
+                }
+            }
+
+            function createSphere(numberOfRecursions) {
+                for(var i = 0; i <= numberOfRecursions; i++)
+                {
+                    divide();
+                }
+            }
+
+            function divide()
+            {
+                var numTriangles = indices.length / 3;
+                var newNumTriangles = numTriangles * 4;
+                var newIndices = new Int16Array(newNumTriangles * 3);
+                var newVertices = new Float32Array(newIndices.length * 3);
+
+                for(var i = 0; i < numTriangles; i++)
+                {
+                    var iv0, iv1, iv2, v0, v1, v2, a, b, c;
+                    iv0 = indices[i * 3];
+                    iv1 = indices[i * 3 + 1]
+                    iv2 = indices[i * 3 + 2];
+                    v0 = new Vec3(vertices[iv0 * 3], vertices[iv0 * 3 + 1], vertices[iv0 * 3 + 2]);
+                    v1 = new Vec3(vertices[iv1 * 3], vertices[iv1 * 3 + 1], vertices[iv1 * 3 + 2]);
+                    v2 = new Vec3(vertices[iv2 * 3], vertices[iv2 * 3 + 1], vertices[iv2 * 3 + 2]);
+
+                    a = Vec3.add(v0, v2);
+                    a.multiply(0.5);
+                    b = Vec3.add(v0, v1);
+                    b.multiply(0.5);
+                    c = Vec3.add(v1, v2);
+                    c.multiply(0.5);
+                    a.normalize();
+                    b.normalize();
+                    c.normalize();
+
+                    var vertixIndex = i * 6;
+                    var indexPoint = i * 12;
+                    newVertices[vertixIndex * 3] = v0.x;
+                    newVertices[vertixIndex * 3 + 1] = v0.y;
+                    newVertices[vertixIndex * 3 + 2] = v0.z;
+                    newVertices[(vertixIndex + 1) * 3] = b.x;
+                    newVertices[(vertixIndex + 1) * 3 + 1] = b.y;
+                    newVertices[(vertixIndex + 1) * 3 + 2] = b.z;
+                    newVertices[(vertixIndex + 2) * 3] = v1.x;
+                    newVertices[(vertixIndex + 2) * 3 + 1] = v1.y;
+                    newVertices[(vertixIndex + 2) * 3 + 2] = v1.z;
+                    newVertices[(vertixIndex + 3) * 3] = c.x;
+                    newVertices[(vertixIndex + 3) * 3 + 1] = c.y;
+                    newVertices[(vertixIndex + 3) * 3 + 2] = c.z;
+                    newVertices[(vertixIndex + 4) * 3] = v2.x;
+                    newVertices[(vertixIndex + 4) * 3 + 1] = v2.y;
+                    newVertices[(vertixIndex + 4) * 3 + 2] = v2.z;
+                    newVertices[(vertixIndex + 5) * 3] = a.x;
+                    newVertices[(vertixIndex + 5) * 3 + 1] = a.y;
+                    newVertices[(vertixIndex + 5) * 3 + 2] = a.z;
+
+                    newIndices[indexPoint] = vertixIndex;
+                    newIndices[indexPoint + 1] = vertixIndex + 1;
+                    newIndices[indexPoint + 2] = vertixIndex + 5;
+                    newIndices[indexPoint + 3] = vertixIndex + 1;
+                    newIndices[indexPoint + 4] = vertixIndex + 2;
+                    newIndices[indexPoint + 5] = vertixIndex + 3;
+                    newIndices[indexPoint + 6] = vertixIndex + 5;
+                    newIndices[indexPoint + 7] = vertixIndex + 1;
+                    newIndices[indexPoint + 8] = vertixIndex + 3;
+                    newIndices[indexPoint + 9] = vertixIndex + 5;
+                    newIndices[indexPoint + 10] = vertixIndex + 3;
+                    newIndices[indexPoint + 11] = vertixIndex + 4;
+                }
+                vertices = newVertices;
+                indices = newIndices;
+            }
+        </script>
+    </body>
+</html>
