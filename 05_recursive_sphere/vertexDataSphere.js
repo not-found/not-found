@@ -47,7 +47,7 @@ var sphere = ( function() {
 		var indicesTris = this.indicesTris;
 		var numberOfRecursions = iterations;
 
-		for(var h = 0; h <= numberOfRecursions; h++)
+		for(var h = 0; h < numberOfRecursions; h++)
 		{
 			var numTriangles = this.indicesTris.length / 3;
 			var newNumTriangles = numTriangles * 4;
