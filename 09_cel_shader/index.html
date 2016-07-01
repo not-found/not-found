@@ -1,0 +1,160 @@
+<!DOCTYPE html5>
+<html>
+	<head>
+		<script src="ext/gl-matrix.js"></script>
+		<script src="plane.js"></script>
+		<script src="sphere.js"></script>
+		<script src="torus.js"></script>
+		<script src="tpl.js"></script>
+		<script type="x-shader/x-vertex" id="vertexshader">
+			attribute vec3 aPosition;
+			attribute vec3 aNormal;
+
+			uniform mat4 uPMatrix;
+			uniform mat4 uMVMatrix;
+			uniform mat3 uNMatrix;
+
+			varying vec3 vNormal;
+			varying vec4 vPosition;
+
+			void main(){
+				// Calculate vertex position in eye coordinates.
+				vec4 tPosition = uMVMatrix * vec4(aPosition, 1.0);
+				// Calculate projektion.
+				gl_Position = uPMatrix * tPosition;
+
+				vec3 tNormal = normalize(uNMatrix * aNormal);
+
+				vPosition = tPosition;
+				vNormal = tNormal;
+			}
+		</script>
+		<script type="x-shader/x-fragment" id="fragmentshader">
+			precision mediump float;
+
+			varying vec3 vNormal;
+			varying vec4 vPosition;
+
+			float thresholds[4];
+			float brightnessLevels[5];
+			float litOutlineThickness = 0.5;
+			float unlitOutlineThickness = 0.5;
+
+			// Material.
+			struct PhongMaterial {
+				vec3 ka;
+				vec3 kd;
+				vec3 ks;
+				float ke;
+			};
+			uniform PhongMaterial material;
+
+			// Ambient light.
+			uniform vec3 ambientLight;
+
+			// Pointlights.
+			const int MAX_LIGHT_SOURCES = 8;
+			struct LightSource {
+				bool isOn;
+				vec3 position;
+				vec3 color;
+			};
+			uniform LightSource light[MAX_LIGHT_SOURCES];
+
+			// Phong illumination for single light source,
+			// no ambient light.
+			vec3 phong(vec3 p, vec3 n, vec3 v, LightSource l) {
+
+				vec3 L = l.color;
+				vec3 s = normalize(l.position - p);
+				vec3 r = reflect(-s, n);
+
+				float sn = max( dot(s,n), 0.0);
+				float rv = max( dot(r,v), 0.0);
+
+				if(sn > thresholds[0])
+				{
+					sn = brightnessLevels[0];
+				}else if(sn > thresholds[1]){
+					sn = brightnessLevels[1];
+				}else if(sn > thresholds[2]){
+					sn = brightnessLevels[2];
+				}else if(sn > thresholds[3]){
+					sn = brightnessLevels[3];
+				}else{
+					sn = brightnessLevels[4];
+				}
+
+				if(rv > thresholds[0])
+				{
+					rv = brightnessLevels[0];
+				}else if(rv > thresholds[1]){
+					rv = brightnessLevels[1];
+				}else if(rv > thresholds[2]){
+					rv = brightnessLevels[2];
+				}else if(rv > thresholds[3]){
+					rv = brightnessLevels[3];
+				}else{
+					rv = brightnessLevels[4];
+				}
+
+				sn *= 0.9;
+				vec3 diffuse = material.kd * L * sn;
+				vec3 specular = material.ks * L * pow(rv, material.ke);
+				vec3 color = diffuse + specular;
+
+				if (dot(v, n) < mix(unlitOutlineThickness, litOutlineThickness, max(0.0, dot(n, s))))
+				{
+				   color = vec3(0.0, 0.0, 0.0);
+            	}
+
+				return color;
+			}
+
+			// Phong illumination for multiple light sources
+			vec3 phong(vec3 p, vec3 n, vec3 v) {
+
+				// Calculate ambient light.
+				vec3 result = material.ka * ambientLight;
+
+				// Add light from all light sources.
+				for(int j=0; j < MAX_LIGHT_SOURCES; j++){
+					if(light[j].isOn){
+						result += phong(p, n, v, light[j]);
+					}
+				}
+				return result;
+			}
+
+			void main() {
+
+				thresholds[0] = 0.95;
+				thresholds[1] = 0.5;
+				thresholds[2] = 0.2;
+				thresholds[3] = 0.03;
+
+				brightnessLevels[0] = 1.0;
+				brightnessLevels[1] = 0.8;
+				brightnessLevels[2] = 0.6;
+				brightnessLevels[3] = 0.35;
+				brightnessLevels[4] = 0.2;
+
+				// Calculate view vector.
+				vec3 v = normalize(-vPosition.xyz);
+
+				vec3 vNormal = normalize(vNormal);
+
+				gl_FragColor = vec4( phong(vPosition.xyz, vNormal, v), 1.0);
+			}
+		</script>
+	</head>
+	<body onload="app.start()">
+		<canvas id="canvas" width="500" height="500"></canvas>
+		<br>
+		Controls:<br>
+		L - Orbit Light<br>
+		C - Orbit Camera<br>
+		X - Rotate Torus<br>
+		SHIFT + [L/C] - Reverse orbit direction<br>
+	</body>
+</html>
